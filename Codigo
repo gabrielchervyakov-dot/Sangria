@@ -1,0 +1,210 @@
+CREATE TABLE Funcionario
+(
+    id_fun INT PRIMARY KEY,
+    nome VARCHAR(25) NOT NULL,
+    nome_usu VARCHAR(30) NOT NULL UNIQUE,
+    cargo VARCHAR(20) NOT NULL,
+    senha VARCHAR(15) NOT NULL,
+    id_supervisor INT,
+
+    FOREIGN KEY (id_supervisor)
+        REFERENCES Funcionario(id_fun)
+);
+
+CREATE TABLE Caixa
+(
+    id_caixa INT PRIMARY KEY,
+    nome_caixa char(7) NOT NULL UNIQUE
+);
+
+CREATE TABLE Sangria
+(
+    id_sangria INT PRIMARY KEY,
+    id_caixa INT NOT NULL,
+    id_fun INT NOT NULL,
+    id_supervisor INT NOT NULL,
+    Dinheiro DECIMAL(8,2) NOT NULL,
+    Sangria DECIMAL(8,2) NOT NULL,
+    Din_Atual DECIMAL(8,2)
+        GENERATED ALWAYS AS (Dinheiro - Sangria) VIRTUAL,
+
+    FOREIGN KEY (id_caixa)
+        REFERENCES Caixa(id_caixa),
+
+    FOREIGN KEY (id_fun)
+        REFERENCES Funcionario(id_fun),
+
+    FOREIGN KEY (id_supervisor)
+        REFERENCES Funcionario(id_fun)
+);
+
+/*procedures de inserir dados nas tabelas*/
+
+DELIMITER $$
+CREATE PROCEDURE PROC_INS_SANGRIA /*Procedure para o botao inserir dados da tela sangria*/
+(
+    IN V_id_sangria INT,
+    In V_id_caixa int,
+    in V_id_fun int,
+    in V_id_supervisor int,
+    in V_Dinheiro DECIMAL(8,2),
+    in V_Sangria DECIMAL(8,2)
+)
+BEGIN
+
+    INSERT INTO Sangria(id_sangria, id_caixa, id_fun, id_supervisor, Dinheiro, Sangria)
+    VALUES(V_id_sangria, V_id_caixa, V_id_fun, V_id_supervisor, V_Dinheiro, V_Sangria);
+
+END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE PROC_INS_FUNCIONARIO /*Procedure para o botao inserir dados na tabela Funcionario*/
+(
+    IN V_id_fun INT,
+    In V_nome varchar(25),
+in V_nome_usu VARCHAR(30),
+    in V_cargo VARCHAR(20),
+    in V_senha VARCHAR(15),
+    in V_id_supervisor INT /*precisa primeiro cadastrar o supervisor e depois o funcionario*/
+
+)
+BEGIN
+
+    INSERT INTO Funcionario(id_fun, nome, nome_usu, cargo, senha, id_supervisor)
+    VALUES(V_id_fun, V_nome, V_nome_usu, V_cargo, V_senha, V_id_supervisor);
+
+END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE PROC_INS_CAIXA /*Procedure para o botao inserir dados na tabela CAIXA*/
+(
+    IN V_id_caixa int,
+    in V_nome_caixa CHAR(7)
+)
+BEGIN
+
+    INSERT INTO Caixa(id_caixa, nome_caixa)
+    VALUES(V_id_caixa, V_nome_caixa);
+
+END $$
+DELIMITER ;
+
+
+
+/*procedures de consultar*/
+
+DELIMITER $$
+CREATE PROCEDURE PROC_CONS_SANGRIA /*Procedure para o botao consultar dados da tela sangria*/
+(
+    IN V_id_sangria INT
+)
+BEGIN
+
+    select  S.id_sangria, C.id_caixa, C.nome_caixa, F.nome as Funcionario, SU.nome as Supervisor, S.Dinheiro, S.Sangria, S.Din_Atual
+    from Sangria S, Funcionario F, Funcionario SU, Caixa C
+    where S.id_fun = F.id_fun and
+S.id_supervisor = SU.id_fun AND
+        S.id_caixa = C.id_caixa AND
+        S.id_sangria = V_id_sangria
+        ORDER BY S.id_caixa;
+END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE PROC_CONS_FUNCIONARIO /*Procedure para o consultar registro de funcionario na tela login*/
+(
+    IN V_nome_usu varchar(30),
+    IN V_senha varchar(15)
+)
+BEGIN
+
+    select id_fun,  nome, nome_usu , cargo, id_supervisor
+    from Funcionario
+    where nome_usu = V_nome_usu and
+    senha = V_senha;
+END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE PROC_CONS_CAIXA /*Procedure para listar caixas na tela escolher caixa*/
+(
+)
+BEGIN
+
+    select id_caixa, nome_caixa
+    from Caixa
+     ORDER BY id_caixa;
+END $$
+DELIMITER ;
+
+/*procedures de alterar dados*/
+
+DELIMITER $$
+CREATE PROCEDURE PROC_ALT_SANGRIA /*Procedure para o botao alterar dados da tela sangria*/
+(
+in V_id_sangria int,
+    IN V_id_caixa INT,
+    in V_id_fun int,
+    in V_id_supervisor int,
+    in V_Dinheiro DECIMAL(8,2),
+    in V_Sangria DECIMAL(8,2)
+)
+BEGIN
+
+    update Sangria
+    set id_caixa = V_id_caixa, id_fun = V_id_fun, id_supervisor = V_id_supervisor, Dinheiro = V_Dinheiro, Sangria = V_Sangria
+    where id_sangria = V_id_sangria;
+
+END $$
+DELIMITER ;
+
+/*procedure de deletar dados*/
+
+DELIMITER $$
+CREATE PROCEDURE PROC_DEL_SANGRIA /*Procedure para o botao deletar dados da tela sangria*/
+(
+    IN V_id_sangria INT
+)
+BEGIN
+
+   delete from Sangria
+   where id_sangria = V_id_sangria;
+
+END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE PROC_DEL_FUNCIONARIO /*Procedure para o botao deletar dados da tebela funcionario*/
+(
+    IN V_id_fun INT
+)
+BEGIN
+
+   delete from Funcionario
+   where id_fun = V_id_fun;
+
+END $$
+DELIMITER ;
+
+CALL PROC_INS_FUNCIONARIO(
+    1,
+    'William',
+    'Will',
+    'Supervisor',
+    'Will123',
+    NULL
+);
+
+CALL PROC_INS_FUNCIONARIO(
+    2,
+    'Gabriel',
+    'Gabrielzinho',
+    'Funcionario',
+    'Gabriel123',
+    1
+);
+
+CALL PROC_INS_CAIXA(1, "Caixa 1");
+CALL PROC_INS_CAIXA(2, "Caixa 2");
